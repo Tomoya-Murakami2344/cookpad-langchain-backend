@@ -1,0 +1,21 @@
+{
+  "name": "pg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/community": "^0.0.17",
+    "@langchain/openai": "^0.0.12",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3",
+    "typeorm": "^0.3.19"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.10.9"
+  }
+}

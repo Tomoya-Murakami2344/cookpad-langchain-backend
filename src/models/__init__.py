@@ -1,0 +1,1 @@
+from .gates import insert, insert_to_Text_with_Embedding_Table
