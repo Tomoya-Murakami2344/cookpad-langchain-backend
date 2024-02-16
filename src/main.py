@@ -24,39 +24,18 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 
 import utils
 import pandas as pd
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
-class Response(BaseModel):
-    """ユーザーに返す情報のスキーマ"""
-    title: str = Field(description="あなたが作成したレシピのタイトル")
-    ingredients: List[str] = Field(description="レシピで使用した材料のリスト")
-    instructions: List[str] = Field(description="レシピを作るための手順のリスト")
-    
-parser = PydanticOutputParser(pydantic_object=Response)
-# output_parser = StructuredOutputParser.from_response_schemas(parser.get_response_schemas())
-# format_instructions = parser.get_format_instructions()
-# print(format_instructions)
-
-response_schemas = [
-    ResponseSchema(name="料理名", description="あなたが作成したレシピのタイトル", type="str"),
-    ResponseSchema(
-        name="材料",
-        description="レシピで使用した材料のリスト",
-        type="List[str]",
-    ),
-    ResponseSchema(
-        name="手順",
-        description="レシピを作るための手順のリスト",
-        type="List[str]",
-    ),
-]
-output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
-format_instructions = output_parser.get_format_instructions()
-# print(format_instructions)
+# class Response(BaseModel):
+#     """ユーザーに返す情報のスキーマ"""
+#     title: str = Field(description="あなたが作成したレシピのタイトル")
+#     ingredients: List[str] = Field(description="レシピで使用した材料のリスト")
+#     instructions: List[str] = Field(description="レシピを作るための手順のリスト")
 
 @app.route("/api/data/<ingredient>/<recipe>", methods=["GET"])
 def main(ingredient, recipe):
@@ -66,13 +45,14 @@ def main(ingredient, recipe):
     # データの取得
     # cookpad からデータを取得
     df1,recipe_urls1 = utils.scrape_text(url1, limit=1)
-    # df.to_csv(f"../log/{recipe}.csv", index=False)
     df2,recipe_urls2 = utils.scrape_text(url2, limit=1)
     df = pd.concat([df1, df2])
-    df.to_csv(f"../log/{ingredient}.csv", index=False)
+    
+    os.makedirs("log", exist_ok=True)
+    df.to_csv(f"./log/{ingredient}.csv", index=False)
     
     # csvファイルの読み込み
-    loader = CSVLoader(file_path=f'../log/{ingredient}.csv', csv_args={
+    loader = CSVLoader(file_path=f'./log/{ingredient}.csv', csv_args={
         'delimiter': ',',
         'quotechar': '"',
         'fieldnames': ["title","ingredient","instruction"]
@@ -96,7 +76,7 @@ def main(ingredient, recipe):
     tools = [retriever_tool]
     # チャットモデルの作成
     llm = ChatOpenAI(model="gpt-4-1106-preview", temperature=0)
-    llm_with_tools = llm.bind_functions([retriever_tool, Response])
+    llm_with_tools = llm.bind_functions([retriever_tool])
     # プロンプトの設定
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -165,5 +145,4 @@ def main(ingredient, recipe):
     return jsonify(data)
     
 if __name__ == "__main__":
-    # main("かぼちゃ", "カレーライス")
     app.run(debug=True)
