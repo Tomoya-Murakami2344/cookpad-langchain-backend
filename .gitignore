@@ -160,6 +160,7 @@ cython_debug/
 
 .DS_Store
 log/
+front/
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
