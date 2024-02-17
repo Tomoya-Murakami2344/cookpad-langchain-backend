@@ -5,7 +5,6 @@ sys.path.append("src")
 import time
 import requests
 from bs4 import BeautifulSoup, Tag
-from log import my_logger
 import re
 import pandas as pd
 
