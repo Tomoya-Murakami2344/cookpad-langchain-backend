@@ -54,7 +54,6 @@ def scrape_text(url: str, limit: int = 2) -> pd.DataFrame:
     recipe_urls = []
     for div in div_list:
         title      = div.find("a", class_="recipe-title").get_text(strip=True)
-        my_logger.info(f"タイトル: {title}")
         recipe_url = div.find("a", class_="recipe-title").get("href")
         recipe_url = "https://cookpad.com" + recipe_url
         recipe_urls.append(recipe_url)

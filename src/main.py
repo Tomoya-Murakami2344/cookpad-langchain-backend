@@ -31,6 +31,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+# これでユーザーに返す情報のスキーマをコントロールできるはずだが、呼び出される時と呼び出されない時があるので今回は使用しない
 # class Response(BaseModel):
 #     """ユーザーに返す情報のスキーマ"""
 #     title: str = Field(description="あなたが作成したレシピのタイトル")
