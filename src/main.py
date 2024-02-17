@@ -144,5 +144,5 @@ def main(ingredient, recipe):
     
     return jsonify(data)
     
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == "__main__" and os.getenv("DEBUG") == "True":
+    app.run(debug=os.getenv("DEBUG"))
