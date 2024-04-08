@@ -20,6 +20,7 @@ Flask-Cors==4.0.0
 frozenlist==1.4.1
 GeoAlchemy2==0.14.3
 greenlet==3.0.3
+Gunicorn
 h11==0.14.0
 httpcore==1.0.3
 httpx==0.26.0
