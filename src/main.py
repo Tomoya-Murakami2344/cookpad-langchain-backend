@@ -25,11 +25,15 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 import utils
 import pandas as pd
 import os
+import time
+from main_dev import constructGraph
 from flask import Flask, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+response = {}
 
 # これでユーザーに返す情報のスキーマをコントロールできるはずだが、呼び出される時と呼び出されない時があるので今回は使用しない
 # class Response(BaseModel):
@@ -73,59 +77,18 @@ def main(ingredient, recipe):
         "recipe_retriever",
         "Search for information about recipes",
     )
-    # ツールの登録
-    tools = [retriever_tool]
-    # チャットモデルの作成
-    llm = ChatOpenAI(model="gpt-4-1106-preview", temperature=0)
-    llm_with_tools = llm.bind_functions([retriever_tool])
-    # プロンプトの設定
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system",
-                "ツールを使って既存のレシピを参照し、今までにない新しいレシピを作成してください。必ず、材料{ingredient}を使って料理{recipe}の作り方を教えてください。\
-                以下のフォーマットに従って回答してください。{format_instructions} \
-                出力フォーマット以外の情報は不要です。",
-            ),
-            ("user",
-                "{ingredient}を使った誰も食べたことのない{recipe}のレシピを教えてください。"
-            ),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-    )
+
+    constructGraph(retriever_tool, ingredient, recipe, response)
     
-    agent = (
-        {
-            "ingredient": lambda x: x["ingredient"],
-            "recipe": lambda x: x["recipe"],
-            "format_instructions": lambda x: '''
-            料理名：~ 
-            材料：
-            1. ~
-            2. ~
-            3. ~
-            手順：
-            1. ~
-            2. ~
-            3. ~
-            ''',
-            # Format agent scratchpad from intermediate steps
-            "agent_scratchpad": lambda x: format_to_openai_function_messages(
-                x["intermediate_steps"]
-            ),
-        }
-        | prompt
-        | llm_with_tools
-        | utils.parse
-    )
-    agent_executor = AgentExecutor(
-        agent=agent,
-        tools=[retriever_tool],
-        verbose=True,
-    )
-    response = agent_executor.invoke(
-        {"ingredient": ingredient, "recipe": recipe},
-        return_only_outputs=True
-    )
+    response["output"] = f"""
+    料理名：{response.get(1)}
+    材料：{response.get(2)}
+    手順：{response.get(3)}
+    """
+    response.pop(1)
+    response.pop(2)
+    response.pop(3)
+
     try:
         data = {
             "content": response["output"],
@@ -144,6 +107,25 @@ def main(ingredient, recipe):
         }
     
     return jsonify(data)
+
+keyValue = {1: "recipeName", 2: "ingredients", 3: "procedures"}
+@app.route("/api/data/<ingredient>/<recipe>/<int:task_number>", methods=["GET"])
+def getRecipeName(ingredient, recipe, task_number):
+    # 途中経過の取得
+    start = time.time()
+    while(time.time() - start < 120):
+        if response.get(task_number) is not None:
+            try:
+                print(response.get(task_number),f"==========={task_number}============")
+                # response のtask_numberに対応する値を削除
+                value = response.get(task_number)
+                return jsonify({keyValue.get(task_number): value})
+            except:
+                print(response.get(task_number),f"==========={task_number}============")
+                return jsonify({keyValue.get(task_number): None})
+
+        else:
+            time.sleep(5)
     
 if __name__ == "__main__" and os.getenv("DEBUG") == "True":
     app.run(debug=os.getenv("DEBUG"))
